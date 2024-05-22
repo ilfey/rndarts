@@ -1,33 +1,41 @@
 package main
 
 import (
-	"log"
-	"os"
+	"main/pkg/app"
+	"main/pkg/config"
+	"main/pkg/core"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	bot, err := tgbotapi.NewBotAPI(os.Getenv("TOKEN"))
+	ConfigureLogger()
+
+	if err := config.ReadConfig(); err != nil {
+		panic(err)
+	}
+
+	if err := config.ValidateConfig(); err != nil {
+		panic(err)
+	}
+
+	bot, err := tgbotapi.NewBotAPI(config.GetBotToken())
 	if err != nil {
 		panic(err)
 	}
 
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	c := core.NewCore(bot, logrus.StandardLogger())
 
-	u := tgbotapi.NewUpdate(0)
-	u.Timeout = 60
+	a := app.NewApp(c)
 
-	updates := bot.GetUpdatesChan(u)
+	a.Serve()
+}
 
-	for update := range updates {
-		if update.Message == nil {
-			continue
-		}
-
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-		msg.ReplyToMessageID = update.Message.MessageID
-
-		bot.Send(msg)
-	}
+func ConfigureLogger() {
+	logrus.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp: false,
+		ForceColors:   true,
+		ForceQuote:    true,
+	})
 }

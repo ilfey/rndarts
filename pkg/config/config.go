@@ -1,23 +1,86 @@
 package config
 
-import "os"
+import (
+	"errors"
 
-type Config struct {
-	BotToken string
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+)
+
+type key = string
+
+const (
+	BotTokenKey key = "BOT_TOKEN"
+	AdminsKey   key = "ADMINS"
+	ChannelsKey key = "CHANNELS"
+)
+
+func ReadConfig() error {
+
+	logrus.Debug("Setting config name and type")
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+
+	logrus.Debug("Adding config paths")
+	viper.AddConfigPath(".")
+	viper.AddConfigPath("$HOME/.rndanart")
+
+	logrus.Info("Reading config")
+	err := viper.ReadInConfig()
+	if err != nil {
+		logrus.Errorf("Error reading config file: %s", err)
+		return err
+	}
+
+	return nil
 }
 
-func NewConfig() *Config {
-	return &Config{
-		BotToken: getEnv("BOT_TOKEN", ""),
-	}
+func SaveConfig() error {
+	logrus.Info("Saving config")
+
+	return viper.WriteConfig()
 }
 
-// Get environment variable
-func getEnv(key, fallback string) string {
-	// If value exists, return it
-	if value, exists := os.LookupEnv(key); exists {
-		return value
-	} else {
-		return fallback
+func GetBotToken() string {
+	logrus.Debug("Getting bot token")
+
+	return viper.GetString(BotTokenKey)
+}
+
+func SetBotToken(token string) {
+	logrus.Debug("Setting bot token")
+
+	viper.Set(BotTokenKey, token)
+}
+
+func GetAdmins() []string {
+	logrus.Debug("Getting admins")
+
+	return viper.GetStringSlice(AdminsKey)
+}
+
+func SetAdmins(admins []string) {
+	logrus.Debug("Setting admins")
+
+	viper.Set(AdminsKey, admins)
+}
+
+func GetChannels() []string {
+	logrus.Debug("Getting channels")
+
+	return viper.GetStringSlice(ChannelsKey)
+}
+
+func SetChannels(channels []string) {
+	logrus.Debug("Setting channels")
+
+	viper.Set(ChannelsKey, channels)
+}
+
+func ValidateConfig() error {
+	if !viper.IsSet(BotTokenKey) {
+		return errors.New("bot token not set")
 	}
+
+	return nil
 }
