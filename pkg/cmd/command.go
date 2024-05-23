@@ -7,13 +7,18 @@ type Handler = func(Context)
 type Command interface {
 	Name() string
 	Help() string
+
+	IsVisible() bool
+
 	Handle(Context)
+
 	ToBotCommand() *tgbotapi.BotCommand
 }
 
 type Options struct {
 	Name string
 	Help string
+	IsVisible bool
 }
 
 type CommandImpl struct {
@@ -23,6 +28,10 @@ type CommandImpl struct {
 
 func (c *CommandImpl) Name() string {
 	return c.options.Name
+}
+
+func (c *CommandImpl) IsVisible() bool {
+	return c.options.IsVisible
 }
 
 func (c *CommandImpl) Help() string {
